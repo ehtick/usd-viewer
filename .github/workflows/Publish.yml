@@ -7,6 +7,9 @@ on:
 jobs:
   run-release-script:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     timeout-minutes: 5
     defaults:
       run:
@@ -20,15 +23,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
           
       - name: Install dependencies
-        run: npm install
+        run: npm ci
                 
       - name: Publish to npm (stable branch)
         if: startsWith(github.ref_name, 'release/stable')
-        run: npx --yes needle-publish-helper@stable publish "./usd-wasm" --webhook "${{ secrets.DISCORD_WEBHOOK }}" --access-token "${{ secrets.NPM_TOKEN }}" --tag "stable" --create-tag "release/"
+        run: npx --yes needle-publish-helper@next publish "./usd-wasm" --webhook "${{ secrets.DISCORD_WEBHOOK }}" --oidc --tag "latest" --create-tag "release/" --llm-api-key "${{ secrets.LLM_API_KEY }}"
 
       - name: Publish to npm (next and experimental branches)
         if: ${{ !startsWith(github.ref_name, 'release/stable') }}
-        run: npx --yes needle-publish-helper@stable publish "./usd-wasm" --webhook "${{ secrets.DISCORD_WEBHOOK }}" --access-token "${{ secrets.NPM_TOKEN }}" --tag "${{ github.ref_name }}" --version+tag --version+hash --create-tag "release/"
+        run: npx --yes needle-publish-helper@next publish "./usd-wasm" --webhook "${{ secrets.DISCORD_WEBHOOK }}" --oidc --tag "${{ github.ref_name }}" --version+tag --version+hash --create-tag "release/" --llm-api-key "${{ secrets.LLM_API_KEY }}"
